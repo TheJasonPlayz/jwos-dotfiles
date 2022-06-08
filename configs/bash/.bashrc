@@ -1,0 +1,13 @@
+#
+# ~/.bashrc
+#
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+alias ls='ls --color=auto'
+alias emacs='emacs'
+alias emacsc='emacsclient -c -a "emacs"'
+alias em='emacs -nw'
+alias emacsd='emacs --daemon'
+PS1='[\u@\h \W]\$ '
