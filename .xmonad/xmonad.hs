@@ -8,10 +8,12 @@ import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
 import XMonad.Hooks.SetWMName
+import XMonad.Hooks.ManageDocks
 
 import XMonad.Util.EZConfig
 import XMonad.Util.Loggers
 import XMonad.Util.Ungrab
+import XMonad.Util.Run
 
 import XMonad.Layout.Spiral
 import XMonad.Layout.Grid
@@ -19,6 +21,8 @@ import XMonad.Layout.Magnifier
 import XMonad.Layout.ThreeColumns
 import XMonad.Layout.PerWorkspace
 import XMonad.Layout.Hidden
+import XMonad.Layout.LayoutModifier
+
 
 import XMonad.Hooks.EwmhDesktops
 
@@ -27,25 +31,25 @@ import qualified Data.Map        as M
 
 myTerminal      = "LIBGL_ALWAYS_SOFTWARE=1 alacritty"
 myWorkspaces    = ["1:irc", "2", "3", "4", "5", "6", "7", "8", "9"]
+myBorderWidth   = 2
+myNormColor     = "#afafaf"
+myFocusColor    = "#fafafa"
+mySB = statusBarProp "xmobar" (pure myXmobarPP)
 
 main :: IO ()
-main = xmonad
-     . ewmhFullscreen
-     . ewmh
-     . withEasySB (statusBarProp "xmobar ~/.xmobarrc" (pure myXmobarPP)) defToggleStrutsKey
-     $ myConfig
-
-myConfig = def
-    { terminal   = myTerminal
-    , focusedBorderColor = "#add8e6"
-    , modMask    = mod4Mask
-    , manageHook = myManageHook
-    , startupHook = myStartupHook
-    , mouseBindings = myMouseBindings
-    , keys = myKeys
-    , layoutHook = myLayout
-    , workspaces = myWorkspaces
-    }
+main = do
+    xmproc0 <- spawnPipe ("~/.xmonad/conkyscript")
+    xmonad . docks . withSB mySB . ewmh $ def
+        { manageHook         = myManageHook
+        , modMask            = mod4Mask
+        , terminal           = myTerminal
+        , startupHook        = myStartupHook
+        , layoutHook         = myLayoutHook
+        , workspaces         = myWorkspaces
+        , borderWidth        = myBorderWidth
+        , normalBorderColor  = myNormColor
+        , focusedBorderColor = myFocusColor
+        }
 
 myXmobarPP :: PP
 myXmobarPP = def
@@ -106,7 +110,7 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
     , ((modMask .|. shiftMask, xK_c), kill) -- kill focused window
     , ((modMask .|. shiftMask, xK_q), spawn "killall trayer volumeicon nm-applet && xmonad --recompile && xmonad --restart") -- restart xmonad
     , ((modMask, xK_space), sendMessage NextLayout) -- Switch to next layout
-    , ((modMask, xK_Left), prevWS) -- switch to previous workspace
+    , ((modMask, xK_Left), prevWS) -- is a directory.switch to previous workspace
     , ((modMask, xK_Right), nextWS) -- switch to next workspace
     , ((modMask, xK_h), withFocused hideWindow) -- Hide focused window
     , ((modMask .|. shiftMask, xK_h), popOldestHiddenWindow) -- Pop out oldest hidden window
@@ -135,9 +139,9 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
                                        >> windows W.shiftMaster))
     ]
 
-myLayout = hiddenWindows (tiled ||| Mirror tiled ||| Full ||| threeCol ||| Mirror threeCol ||| spirals ||| Mirror spirals ||| Grid)
+myLayoutHook = avoidStruts (hiddenWindows (tiled ||| Mirror tiled ||| Full ||| threeCol ||| Mirror threeCol ||| spirals ||| Mirror spirals ||| Grid))
   where
-    threeCol = magnifiercz' 1.3 $ ThreeColMid nmaster delta ratio
+    threeCol = ThreeColMid nmaster delta ratio
     tiled    = Tall nmaster delta ratio
     spirals = spiral (6/7)
     nmaster  = 1      -- Default number of windows in the master pane
