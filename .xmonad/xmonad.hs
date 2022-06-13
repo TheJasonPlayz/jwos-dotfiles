@@ -30,6 +30,8 @@ import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
 
 myTerminal      = "LIBGL_ALWAYS_SOFTWARE=1 alacritty"
+myEmacs         = "emacsclient -c -a 'emacs'"
+myMenu          = "rofi -show combi"
 myWorkspaces    = ["1:irc", "2", "3", "4", "5", "6", "7", "8", "9"]
 myBorderWidth   = 2
 myNormColor     = "#afafaf"
@@ -49,7 +51,7 @@ main = do
         , borderWidth        = myBorderWidth
         , normalBorderColor  = myNormColor
         , focusedBorderColor = myFocusColor
-        }
+        } `additionalKeysP` myKeys
 
 myXmobarPP :: PP
 myXmobarPP = def
@@ -102,28 +104,39 @@ myStartupHook = do
         spawn " sleep 2 && trayer --edge top --align right --width 10 --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --height 19 --iconspacing 5"
         spawn "nitrogen --restore &"
 
-myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
-    [ ((modMask .|. shiftMask, xK_Return), spawn myTerminal) -- spawn terminal
-    , ((modMask, xK_t), withFocused $ windows . W.sink) -- sink window into tiling
-    , ((modMask, xK_n), spawn "pcmanfm") -- run file manager
-    , ((modMask, xK_p), spawn "rofi -show combi -combi-modes 'window,drun,run,ssh' -modes combi") -- run rofi
-    , ((modMask .|. shiftMask, xK_c), kill) -- kill focused window
-    , ((modMask .|. shiftMask, xK_q), spawn "killall trayer volumeicon nm-applet && xmonad --recompile && xmonad --restart") -- restart xmonad
-    , ((modMask, xK_space), sendMessage NextLayout) -- Switch to next layout
-    , ((modMask, xK_Left), prevWS) -- is a directory.switch to previous workspace
-    , ((modMask, xK_Right), nextWS) -- switch to next workspace
-    , ((modMask, xK_h), withFocused hideWindow) -- Hide focused window
-    , ((modMask .|. shiftMask, xK_h), popOldestHiddenWindow) -- Pop out oldest hidden window
-    , ((modMask, xK_comma), sendMessage (IncMasterN 1)) -- increment the number of windows in the master area
-    , ((modMask, xK_period), sendMessage (IncMasterN (-1))) -- deincrement the number of windows in the master area
-    , ((modMask, xK_Return), windows W.focusMaster) -- move focus to the master window
+{-myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
+--    [
     --, ((modMask .|. controlMask, xK_Home), spawn "mpc toggle") -- play/pause song
     --, ((modMask .|. controlMask, xK_End), spawn "mpc stop") -- stop playback
     --, ((modMask .|. controlMask, xK_Prior), spawn "mpc prev") -- previous songch
     --, ((modMask .|. controlMask, xK_Next), spawn "mpc next") -- next song		
-    , ((modMask, xK_e), spawn "emacsclient -c -a 'emacs'")
-    
-    ]
+ 
+    ]-}
+myKeys :: [(String, X ())]
+myKeys = 
+      [ 
+      -- XMonad
+        ("M-S-k", spawn "killall trayer volumeicon nm-applet")
+      , ("M-S-r", spawn "xmonad --recompile && xmonad --restart")
+      -- Programs
+      , ("M-S-<Return>", spawn myTerminal)
+      , ("M-f", spawn "pcmanfm")
+      , ("M-e", spawn myEmacs)
+      , ("M-p", spawn myMenu)
+      -- Workspaces
+      , ("M-<Right>", nextWS)
+      , ("M-<Left>", prevWS)
+      -- Windows
+      , ("M-S-c", kill)
+      , ("M-h", withFocused hideWindow)
+      , ("M-S-h", popOldestHiddenWindow)
+      , ("M-<Return>", windows W.focusMaster)
+      -- Layouts
+      , ("M-<Space>", sendMessage NextLayout)
+      , ("M-.", sendMessage (IncMasterN 1))
+      , ("M-,", sendMessage (IncMasterN (-1)))
+      ]
+
 
 myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 
