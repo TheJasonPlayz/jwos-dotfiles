@@ -123,6 +123,7 @@ myKeys =
       , ("M-f", spawn "pcmanfm")
       , ("M-e", spawn myEmacs)
       , ("M-p", spawn myMenu)
+      , ("M-a", spawn "alsamixer")
       -- Workspaces
       , ("M-<Right>", nextWS)
       , ("M-<Left>", prevWS)
