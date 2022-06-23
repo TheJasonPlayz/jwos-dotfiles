@@ -5,6 +5,8 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
+export PATH=$PATH:~/.emacs.d/bin/
+
 alias ls='ls --color=auto'
 alias emacs='emacs'
 alias emacsc='emacsclient -c -a "emacs"'

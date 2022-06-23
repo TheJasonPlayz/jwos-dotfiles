@@ -48,3 +48,13 @@
 ;(unpin! pinned-package another-pinned-package)
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;(unpin! t)
+
+(package! flycheck-aspell)
+(package! async)
+(package! dashboard)
+(package! org-auto-tangle)
+(package! org-board)
+(package! org-web-tools)
+(package! rainbow-mode)
+(package! wc-mode)
+(package! beacon)

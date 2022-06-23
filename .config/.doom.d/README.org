@@ -1,6 +1,16 @@
+#+TITLE: Doom Config (config.el)
+#+AUTHOR: Jason Whitman
+#+PROPERTY: header-args :tangle config.el
+#+auto_tangle: t
+
+* DOOM CONFIG
+** USER SETTINGS
+#+BEGIN_SRC emacs-lisp
 (setq user-full-name "John Doe"
       user-mail-address "john@doe.com")
-
+#+END_SRC
+** DASHBOARD
+#+BEGIN_SRC emacs-lisp
 (use-package dashboard
   :init      ;; tweak dashboard config before loading it
   (setq dashboard-set-heading-icons t)
@@ -26,7 +36,9 @@ List of keybindings (SPC h b b)")
 (dashboard-modify-heading-icons '((recents . "file-text")
                                 (bookmarks . "book"))))
 (setq doom-fallback-buffer-name "*dashboard*")
-
+#+END_SRC
+** EMMS
+#+BEGIN_SRC emacs-lisp
 (emms-all)
 (emms-default-players)
 (emms-mode-line 1)
@@ -35,6 +47,10 @@ List of keybindings (SPC h b b)")
       emms-playlist-buffer-name "*Music*"
       emms-info-asynchronously t
       emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+#+END_SRC
+** ORG MODE
+*** MAIN SETTINGS
+#+BEGIN_SRC emacs-lisp
 
 (map! :map doom-leader-map
       :desc "Org babel tangle" "m B" #'org-babel-tangle)
@@ -55,20 +71,26 @@ List of keybindings (SPC h b b)")
             ("ddg" . "https://duckduckgo.com/?q=")
             ("wiki" . "https://en.wikipedia.org/wiki/"))
         org-table-convert-region-max-lines 20000))
-
+#+END_SRC
+*** ORG JOURNAL
+#+BEGIN_SRC emacs-lisp
 (setq org-journal-dir "~/nc/Org/journal/"
       org-journal-date-prefix "* "
       org-journal-time-prefix "** "
       org-journal-date-format "%B %d, %Y (%A) "
       org-journal-file-format "%Y-%m-%d.org")
-
+#+END_SRC
+*** ORG AUTO TANGLE
+#+BEGIN_SRC emacs-lisp
 (use-package! org-auto-tangle
   :defer t
   :hook (org-mode . org-auto-tangle-mode)
   :config
   (setq org-auto-tangle-default t))
 (general-auto-unbind-keys)
-
+#+END_SRC
+** KEYBINDS
+#+BEGIN_SRC emacs-lisp
 (map! :map doom-leader-map
       (:prefix ("a" . "applications")
        "d" #'dired
@@ -84,7 +106,9 @@ List of keybindings (SPC h b b)")
        :desc "Emms stop track" "s" #'emms-stop
        :desc "Emms play previous track" "p" #'emms-previous
        :desc "Emms play next track" "n" #'emms-next)))
-
+#+END_SRC
+** OTHER SETTINGS / DEFAULT DOCS
+#+BEGIN_SRC emacs-lisp
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
 ;; - `doom-font' -- the primary font to use
@@ -148,3 +172,4 @@ List of keybindings (SPC h b b)")
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
+#+END_SRC

@@ -1,3 +1,11 @@
+#+TITLE: XMonad Config
+#+AUTHOR: Jason Whitman
+#+PROPERTY: header-args :tangle xmonad.hs
+#+auto_tangle: t
+
+* XMONAD CONFIG
+** IMPORTS
+#+BEGIN_SRC haskell
 import XMonad
 
 import XMonad.Actions.CycleWS
@@ -28,7 +36,9 @@ import XMonad.Hooks.EwmhDesktops
 
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
-
+#+END_SRC
+** VARIABLES
+#+BEGIN_SRC haskell
 myTerminal      = "LIBGL_ALWAYS_SOFTWARE=1 alacritty"
 myEmacs         = "emacsclient -c -a 'emacs'"
 myMenu          = "rofi -show combi"
@@ -38,7 +48,9 @@ myBorderWidth   = 2
 myNormColor     = "#afafaf"
 myFocusColor    = "#fafafa"
 mySB = statusBarProp "xmobar" (pure myXmobarPP)
-
+#+END_SRC
+** MAIN CONFIG
+#+BEGIN_SRC haskell
 main :: IO ()
 main = do
     xmproc0 <- spawnPipe ("~/.xmonad/conkyscript")
@@ -53,6 +65,10 @@ main = do
         , normalBorderColor  = myNormColor
         , focusedBorderColor = myFocusColor
         } `additionalKeysP` myKeys
+
+#+END_SRC
+** XMOBAR CONFIG
+#+BEGIN_SRC haskell
 
 myXmobarPP :: PP
 myXmobarPP = def
@@ -82,11 +98,19 @@ myXmobarPP = def
     red      = xmobarColor "#ff5555" ""
     lowWhite = xmobarColor "#bbbbbb" ""
 
+#+END_SRC
+** HOOKS
+*** MANAGE HOOK
+#+BEGIN_SRC haskell
+
 myManageHook :: ManageHook
 myManageHook = composeAll
     [ className =? "Gimp" --> doFloat
     , isDialog            --> doFloat
     ]
+#+END_SRC
+*** STARTUP HOOK
+#+BEGIN_SRC haskell
 
 myStartupHook = do
         setWMName "LG3D"
@@ -103,7 +127,9 @@ myStartupHook = do
 
         spawn " sleep 2 && trayer --edge top --align right --width 10 --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --height 19 --iconspacing 5"
         spawn "nitrogen --restore &"
-
+#+END_SRC
+*** LAYOUT HOOK
+#+BEGIN_SRC haskell
 myLayoutHook = avoidStruts (hiddenWindows (tiled ||| Mirror tiled ||| Full ||| threeCol ||| Mirror threeCol ||| spirals ||| Mirror spirals ||| Grid))
   where
     threeCol = ThreeColMid nmaster delta ratio
@@ -112,7 +138,10 @@ myLayoutHook = avoidStruts (hiddenWindows (tiled ||| Mirror tiled ||| Full ||| t
     nmaster  = 1      -- Default number of windows in the master pane
     ratio    = 1/2    -- Default proportion of screen occupied by master pane
     delta    = 3/100  -- Percent of screen to increment by when resizing panes
-
+#+END_SRC
+** BINDINGS
+*** MOUSE BINDINGS
+#+BEGIN_SRC haskell
 myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- mod-button1, Set the window to floating mode and move by dragging
@@ -126,6 +155,10 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm, button3), (\w -> focus w >> mouseResizeWindow w
                                        >> windows W.shiftMaster))
     ]
+
+#+END_SRC
+*** KEY BINDINGS
+#+BEGIN_SRC haskell
 
 myKeys :: [(String, X ())]
 myKeys =
@@ -155,3 +188,4 @@ myKeys =
       , ("M-.", sendMessage (IncMasterN 1))
       , ("M-,", sendMessage (IncMasterN (-1)))
       ]
+#+END_SRC
