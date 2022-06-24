@@ -1,6 +1,10 @@
 import XMonad
 
 import XMonad.Actions.CycleWS
+import XMonad.Actions.GridSelect
+import XMonad.Actions.MouseResize
+import XMonad.Actions.Promote
+import XMonad.Actions.RotSlaves (rotSlavesDown, rotAllDown)
 
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageDocks
@@ -9,11 +13,13 @@ import XMonad.Hooks.StatusBar
 import XMonad.Hooks.StatusBar.PP
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.EwmhDesktops
 
 import XMonad.Util.EZConfig
 import XMonad.Util.Loggers
 import XMonad.Util.Ungrab
 import XMonad.Util.Run
+import XMonad.Util.NamedActions
 
 import XMonad.Layout.Spiral
 import XMonad.Layout.Grid
@@ -23,27 +29,31 @@ import XMonad.Layout.PerWorkspace
 import XMonad.Layout.Hidden
 import XMonad.Layout.LayoutModifier
 
-
-import XMonad.Hooks.EwmhDesktops
-
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
+import Data.Maybe
+import System.IO
+
+import Colors.DoomOne
 
 myTerminal      = "LIBGL_ALWAYS_SOFTWARE=1 alacritty"
 myEmacs         = "emacsclient -c -a 'emacs'"
-myMenu          = "rofi -show combi"
-myWorkspaces    = ["chat", "dev", "www", "gaming", "5", "6", "7", "8", "9"]
+myWorkspaces    = ["chat", "dev", "www", "gaming", "writing", "6", "7", "8", "9"]
 hackathonWorkspaces = ["brainstorming", "prototyping", "design", "dev"]
+myWorkspaceIndices = M.fromList $ zipWith (,) myWorkspaces [1..]
 myBorderWidth   = 2
 myNormColor     = "#afafaf"
 myFocusColor    = "#fafafa"
-mySB = statusBarProp "xmobar" (pure myXmobarPP)
+
+windowCount :: X (Maybe String)
+windowCount = gets $ Just . show . length . W.integrate' . W.stack . W.workspace . W.current . windowset
+
 
 main :: IO ()
 main = do
-    xmproc0 <- spawnPipe ("~/.xmonad/conkyscript")
-    xmonad . docks . withSB mySB . ewmh $ def
-        { manageHook         = myManageHook
+    xmproc0 <- spawnPipe ("xmobar -x 0 $HOME/.xmobarrc")
+    xmonad $ addDescrKeys ((mod4Mask, xK_F2), showKeybindings) myKeys $ ewmh def
+        { manageHook         = myManageHook <+> manageDocks
        , modMask            = mod4Mask
         , terminal           = myTerminal
         , startupHook        = myStartupHook
@@ -52,41 +62,46 @@ main = do
         , borderWidth        = myBorderWidth
         , normalBorderColor  = myNormColor
         , focusedBorderColor = myFocusColor
-        } `additionalKeysP` myKeys
+        , logHook = dynamicLogWithPP $ xmobarPP
+        { ppOutput = \x -> hPutStrLn xmproc0 x   -- xmobar on monitor 1
+        , ppCurrent = xmobarColor color06 "" . wrap
+                      ("<box type=Bottom width=2 mb=2 color=" ++ color06 ++ ">") "</box>"
+          -- Visible but not current workspace
+        , ppVisible = xmobarColor color06 "" . clickable
+          -- Hidden workspace
+        , ppHidden = xmobarColor color05 "" . wrap
+                     ("<box type=Top width=2 mt=2 color=" ++ color05 ++ ">") "</box>" . clickable
+          -- Hidden workspaces (no windows)
+        , ppHiddenNoWindows = xmobarColor color05 ""  . clickable
+          -- Title of active window
+        , ppTitle = xmobarColor color16 "" . shorten 60
+          -- Separator character
+        , ppSep =  "<fc=" ++ color09 ++ "> <fn=1>|</fn> </fc>"
+          -- Urgent workspace
+        , ppUrgent = xmobarColor color02 "" . wrap "!" "!"
+          -- Adding # of windows on current workspace to the bar
+        , ppExtras  = [windowCount]
+          -- order of things in xmobar
+        , ppOrder  = \(ws:l:t:ex) -> [ws,l]++ex++[t]
+        }
+        }
 
-myXmobarPP :: PP
-myXmobarPP = def
-    { ppSep             = magenta " • "
-    , ppTitleSanitize   = xmobarStrip
-    , ppCurrent         = wrap " " "" . xmobarBorder "Top" "#8be9fd" 2
-    , ppHidden          = white . wrap " " ""
-    , ppHiddenNoWindows = lowWhite . wrap " " ""
-    , ppUrgent          = red . wrap (yellow "!") (yellow "!")
-    , ppOrder           = \[ws, l, _, wins] -> [ws, l, wins]
-    , ppExtras          = [logTitles formatFocused formatUnfocused]
-    }
-  where
-    formatFocused   = wrap (white    "[") (white    "]") . magenta . ppWindow
-    formatUnfocused = wrap (lowWhite "[") (lowWhite "]") . blue    . ppWindow
-
-    -- | Windows should have *some* title, which should not not exceed a
-    -- sane length.
-    ppWindow :: String -> String
-    ppWindow = xmobarRaw . (\w -> if null w then "untitled" else w) . shorten 30
-
-    blue, lowWhite, magenta, red, white, yellow :: String -> String
-    magenta  = xmobarColor "#ff79c6" ""
-    blue     = xmobarColor "#bd93f9" ""
-    white    = xmobarColor "#f8f8f2" ""
-    yellow   = xmobarColor "#f1fa8c" ""
-    red      = xmobarColor "#ff5555" ""
-    lowWhite = xmobarColor "#bbbbbb" ""
+clickable ws = "<action=xdotool key super+"++show i++">"++ws++"</action>"
+    where i = fromJust $ M.lookup ws myWorkspaceIndices
 
 myManageHook :: ManageHook
 myManageHook = composeAll
     [ className =? "Gimp" --> doFloat
     , isDialog            --> doFloat
     ]
+
+showKeybindings :: [((KeyMask, KeySym), NamedAction)] -> NamedAction
+showKeybindings x = addName "Show Keybindings" $ io $ do
+  h <- spawnPipe $ "yad --text-info --fontname=\"SauceCodePro Nerd Font Mono 12\" --fore=#46d9ff back=#282c36 --center --geometry=1200x800 --title \"XMonad keybindings\""
+  hPutStr h (unlines $ showKm x)
+  hClose h
+  return ()
+
 
 myStartupHook = do
         setWMName "LG3D"
@@ -127,31 +142,31 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
                                        >> windows W.shiftMaster))
     ]
 
-myKeys :: [(String, X ())]
-myKeys =
+myKeys :: XConfig l0 -> [((KeyMask, KeySym), NamedAction)]
+myKeys c = (subtitle "Custom Keys":) $ mkNamedKeymap c $
       [
       -- XMonad
-        ("M-S-k", spawn "killall trayer volumeicon nm-applet")
-      , ("M-S-r", spawn "xmonad --recompile && xmonad --restart")
+        ("M-S-k", addName "" $ spawn "killall trayer volumeicon nm-applet")
+      , ("M-S-r", addName "" $ spawn "xmonad --recompile && xmonad --restart")
       -- Programs
-      , ("M-S-<Return>", spawn myTerminal)
-      , ("M-f", spawn "pcmanfm")
-      , ("M-e", spawn myEmacs)
-      , ("M-p", spawn myMenu)
-      , ("M-a", spawn "alsamixer")
+      , ("M-S-<Return>", addName "" $ spawn myTerminal)
+      , ("M-f", addName "" $ spawn "pcmanfm")
+      , ("M-e", addName "" $ spawn myEmacs)
+      , ("M-p", addName "" $ spawn "rofi -show combi")
+      , ("M-a", addName "" $ spawn "alsamixer")
       -- Workspaces
-      , ("M-<Right>", nextWS)
-      , ("M-<Left>", prevWS)
-      , ("M-<KP_Add>", shiftToNext)
-      , ("M-<KP_Subtract>", shiftToPrev)
+      , ("M-<Right>", addName "" $ nextWS)
+      , ("M-<Left>", addName "" $ prevWS)
+      , ("M-<KP_Add>", addName "" $ shiftToNext)
+      , ("M-<KP_Subtract>", addName "" $ shiftToPrev)
 
       -- Windows
-      , ("M-S-c", kill)
-      , ("M-h", withFocused hideWindow)
-      , ("M-S-h", popOldestHiddenWindow)
-      , ("M-<Return>", windows W.focusMaster)
+      , ("M-S-c", addName "" $ kill)
+      , ("M-h", addName "" $ withFocused hideWindow)
+      , ("M-S-h", addName "" $ popOldestHiddenWindow)
+      , ("M-<Return>", addName "" $ windows W.focusMaster)
       -- Layouts
-      , ("M-<Space>", sendMessage NextLayout)
-      , ("M-.", sendMessage (IncMasterN 1))
-      , ("M-,", sendMessage (IncMasterN (-1)))
+      , ("M-<Space>", addName "" $ sendMessage NextLayout)
+      , ("M-.", addName "" $ sendMessage (IncMasterN 1))
+      , ("M-,", addName "" $ sendMessage (IncMasterN (-1)))
       ]
