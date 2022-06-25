@@ -58,3 +58,5 @@
 (package! rainbow-mode)
 (package! wc-mode)
 (package! beacon)
+(package! arduino-mode)
+(package! arduino-cli-mode)

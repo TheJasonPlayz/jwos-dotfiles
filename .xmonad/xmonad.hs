@@ -22,6 +22,10 @@ import XMonad.Layout.Magnifier
 import XMonad.Layout.PerWorkspace
 import XMonad.Layout.Spiral
 import XMonad.Layout.ThreeColumns
+import XMonad.Layout.WindowArranger (windowArrange, WindowArrangerMsg(..))
+import XMonad.Layout.WindowNavigation
+import XMonad.Layout.Spacing
+import XMonad.Layout.ResizableTile
 import qualified XMonad.StackSet as W
 import XMonad.Util.EZConfig
 import XMonad.Util.Loggers
@@ -39,8 +43,18 @@ myNormColor = "#afafaf"
 
 myFocusColor = "#fafafa"
 
+myFont = "xft:SauceCodePro Nerd Font Mono:regular:size=9:antialias=true:hinting=true"
+
 windowCount :: X (Maybe String)
 windowCount = gets $ Just . show . length . W.integrate' . W.stack . W.workspace . W.current . windowset
+
+myColorizer :: Window -> Bool -> X (String, String)
+myColorizer = colorRangeFromClassName
+                (0x28,0x2c,0x34) -- lowest inactive bg
+                (0x28,0x2c,0x34) -- highest inactive bg
+                (0xc7,0x92,0xea) -- active bg
+                (0xc0,0xa7,0x9a) -- inactive fg
+                (0x28,0x2c,0x34) -- active fg
 
 main :: IO ()
 main = do
@@ -58,14 +72,10 @@ main = do
             borderWidth = myBorderWidth,
             normalBorderColor = myNormColor,
             focusedBorderColor = myFocusColor,
-            logHook =
-              dynamicLogWithPP $
-                xmobarPP
-                  { ppOutput = \x -> hPutStrLn xmproc0 x, -- xmobar on monitor 1
-                    ppCurrent =
-                      xmobarColor color06 ""
-                        . wrap
-                          ("<box type=Bottom width=2 mb=2 color=" ++ color06 ++ ">")
+            logHook = dynamicLogWithPP $ xmobarPP
+            { ppOutput = \x -> hPutStrLn xmproc0 x, -- xmobar on monitor 1
+              ppCurrent =
+              xmobarColor color06 "" . wrap ("<box type=Bottom width=2 mb=2 color=" ++ color06 ++ ">")
                           "</box>",
                     -- Visible but not current workspace
                     ppVisible = xmobarColor color06 "" . clickable,
@@ -163,8 +173,7 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) =
 
 myKeys :: XConfig l0 -> [((KeyMask, KeySym), NamedAction)]
 myKeys c =
-  (subtitle "Custom Keys" :) $
-    mkNamedKeymap c $
+  (subtitle "Custom Keys" :) $ mkNamedKeymap c $
       [ -- XMonad
         ("M-S-k", addName "" $ spawn "killall trayer volumeicon nm-applet"),
         ("M-S-r", addName "" $ spawn "xmonad --recompile && xmonad --restart"),
@@ -184,8 +193,152 @@ myKeys c =
         ("M-h", addName "" $ withFocused hideWindow),
         ("M-S-h", addName "" $ popOldestHiddenWindow),
         ("M-<Return>", addName "" $ windows W.focusMaster),
+
+        -- Window resizing
+          ("M-h", addName "Shrink window"               $ sendMessage Shrink)
+        , ("M-l", addName "Expand window"               $ sendMessage Expand)
+        , ("M-M1-j", addName "Shrink window vertically" $ sendMessage MirrorShrink)
+        , ("M-M1-k", addName "Expand window vertically" $ sendMessage MirrorExpand)
+
+
         -- Layouts
-        ("M-<Space>", addName "" $ sendMessage NextLayout),
-        ("M-.", addName "" $ sendMessage (IncMasterN 1)),
-        ("M-,", addName "" $ sendMessage (IncMasterN (-1)))
+        , ("M-<Space>", addName "" $ sendMessage NextLayout)
+        , ("M-.", addName "" $ sendMessage (IncMasterN 1))
+        , ("M-,", addName "" $ sendMessage (IncMasterN (-1)))
+
+        , ("M-m", addName "Move focus to master window" $ windows W.focusMaster)
+        , ("M-j", addName "Move focus to next window"   $ windows W.focusDown)
+        , ("M-k", addName "Move focus to prev window"   $ windows W.focusUp)
+        , ("M-S-m", addName "Swap focused window with master window" $ windows W.swapMaster)
+        , ("M-S-j", addName "Swap focused window with next window"   $ windows W.swapDown)
+        , ("M-S-k", addName "Swap focused window with prev window"   $ windows W.swapUp)
+        , ("M-<Backspace>", addName "Move focused window to master"  $ promote)
+        , ("M-S-<Tab>", addName "Rotate all windows except master"   $ rotSlavesDown)
+        , ("M-C-<Tab>", addName "Rotate all windows current stack"   $ rotAllDown)
+
+        -- Grid Select
+        , ("M-M1-<Return>", addName "Select favorite apps" $ spawnSelected'
+       $   gsInternet ++ gsMultimedia ++ gsOffice ++ gsSettings ++ gsSystem ++ gsUtilities)
+        , ("M-M1-c", addName "Select favorite apps" $ spawnSelected' gsCategories)
+        , ("M-M1-t", addName "Goto selected window"        $ goToSelected $ mygridConfig myColorizer)
+        , ("M-M1-b", addName "Bring selected window"       $ bringSelected $ mygridConfig myColorizer)
+        , ("M-M1-3", addName "Menu of Internet apps"       $ spawnSelected' gsInternet)
+        , ("M-M1-4", addName "Menu of multimedia apps"     $ spawnSelected' gsMultimedia)
+        , ("M-M1-5", addName "Menu of office apps"         $ spawnSelected' gsOffice)
+        , ("M-M1-6", addName "Menu of settings apps"       $ spawnSelected' gsSettings)
+        , ("M-M1-7", addName "Menu of system apps"         $ spawnSelected' gsSystem)
+        , ("M-M1-8", addName "Menu of utilities apps"      $ spawnSelected' gsUtilities)
+
       ]
+
+myNavigation :: TwoD a (Maybe a)
+myNavigation = makeXEventhandler $ shadowWithKeymap navKeyMap navDefaultHandler
+ where navKeyMap = M.fromList [
+          ((0,xK_Escape), cancel)
+         ,((0,xK_Return), select)
+         ,((0,xK_slash) , substringSearch myNavigation)
+         ,((0,xK_Left)  , move (-1,0)  >> myNavigation)
+         ,((0,xK_h)     , move (-1,0)  >> myNavigation)
+         ,((0,xK_Right) , move (1,0)   >> myNavigation)
+         ,((0,xK_l)     , move (1,0)   >> myNavigation)
+         ,((0,xK_Down)  , move (0,1)   >> myNavigation)
+         ,((0,xK_j)     , move (0,1)   >> myNavigation)
+         ,((0,xK_Up)    , move (0,-1)  >> myNavigation)
+         ,((0,xK_k)     , move (0,-1)  >> myNavigation)
+         ,((0,xK_y)     , move (-1,-1) >> myNavigation)
+         ,((0,xK_i)     , move (1,-1)  >> myNavigation)
+         ,((0,xK_n)     , move (-1,1)  >> myNavigation)
+         ,((0,xK_m)     , move (1,-1)  >> myNavigation)
+         ,((0,xK_space) , setPos (0,0) >> myNavigation)
+         ]
+       navDefaultHandler = const myNavigation
+
+mygridConfig :: p -> GSConfig Window
+mygridConfig colorizer = (buildDefaultGSConfig myColorizer)
+    { gs_cellheight   = 40
+    , gs_cellwidth    = 200
+    , gs_cellpadding  = 6
+    , gs_navigate    = myNavigation
+    , gs_originFractX = 0.5
+    , gs_originFractY = 0.5
+    , gs_font         = myFont
+    }
+
+spawnSelected' :: [(String, String)] -> X ()
+spawnSelected' lst = gridselect conf lst >>= flip whenJust spawn
+    where conf = def
+                   { gs_cellheight   = 40
+                   , gs_cellwidth    = 180
+                   , gs_cellpadding  = 6
+                   , gs_originFractX = 0.5
+                   , gs_originFractY = 0.5
+                   , gs_font         = myFont
+                   }
+
+runSelectedAction' :: GSConfig (X ()) -> [(String, X ())] -> X ()
+runSelectedAction' conf actions = do
+    selectedActionM <- gridselect conf actions
+    case selectedActionM of
+        Just selectedAction -> selectedAction
+        Nothing -> return ()
+
+gsCategories =
+  [ ("Internet",   "xdotool key super+alt+1")
+  , ("Multimedia", "xdotool key super+alt+2")
+  , ("Office",     "xdotool key super+alt+3")
+  , ("Settings",   "xdotool key super+alt+4")
+  , ("System",     "xdotool key super+alt+5")
+  , ("Utilities",  "xdotool key super+alt+6")
+  ]
+
+gsInternet =
+  [ ("Firefox", "firefox")
+  , ("Discord", "discord")
+  , ("Element", "element-desktop")
+  , ("LBRY App", "lbry")
+  , ("Mailspring", "mailspring")
+  , ("Nextcloud", "nextcloud")
+  , ("Transmission", "transmission-gtk")
+  , ("Zoom", "zoom")
+  ]
+
+gsMultimedia =
+  [ ("Audacity", "audacity")
+  , ("Blender", "blender")
+  , ("Deadbeef", "deadbeef")
+  , ("Kdenlive", "kdenlive")
+  , ("OBS Studio", "obs")
+  , ("VLC", "vlc")
+  ]
+
+gsOffice =
+  [ ("Document Viewer", "evince")
+  , ("LibreOffice", "libreoffice")
+  , ("LO Base", "lobase")
+  , ("LO Calc", "localc")
+  , ("LO Draw", "lodraw")
+  , ("LO Impress", "loimpress")
+  , ("LO Math", "lomath")
+  , ("LO Writer", "lowriter")
+  ]
+
+gsSettings =
+  [ ("Customize Look and Feel", "lxappearance")
+  ]
+
+gsSystem =
+  [ ("Alacritty", myTerminal)
+  , ("Bash", (myTerminal ++ " -e bash"))
+  , ("Htop", (myTerminal ++ " -e htop"))
+  , ("Fish", (myTerminal ++ " -e fish"))
+  , ("PCManFM", "pcmanfm")
+  , ("VirtualBox", "virtualbox")
+  , ("Virt-Manager", "virt-manager")
+  , ("Zsh", (myTerminal ++ " -e zsh"))
+  ]
+
+gsUtilities =
+  [ ("Emacs", "emacs")
+  , ("Emacsclient", "emacsclient -c -a 'emacs'")
+  , ("Nitrogen", "nitrogen")
+  ]

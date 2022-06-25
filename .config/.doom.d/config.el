@@ -85,6 +85,14 @@ List of keybindings (SPC h b b)")
        :desc "Emms play previous track" "p" #'emms-previous
        :desc "Emms play next track" "n" #'emms-next)))
 
+(use-package arduino-cli-mode
+  :ensure t
+  :hook arduino-mode
+  ;; :mode "\\.ino\\'"
+  :custom
+  (arduino-cli-warnings 'all)
+  (arduino-cli-verify t))
+
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
 ;; - `doom-font' -- the primary font to use
