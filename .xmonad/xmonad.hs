@@ -60,7 +60,7 @@ main :: IO ()
 main = do
   xmproc0 <- spawnPipe ("xmobar -x 0 $HOME/.xmobarrc")
   xmonad $
-    addDescrKeys ((mod4Mask, xK_F2), showKeybindings) myKeys $
+    addDescrKeys ((mod4Mask .|. mod1Mask, xK_h), showKeybindings) myKeys $
       ewmh
         def
           { manageHook = myManageHook <+> manageDocks,
@@ -105,9 +105,11 @@ clickable ws = "<action=xdotool key super+" ++ show i ++ ">" ++ ws ++ "</action>
   where
     i = fromJust $ M.lookup ws myWorkspaceIndices
 
-myWorkspaces = ["chat", "www", "dev", "music", "vid", "gaming", "writing", "8", "9"]
+normWorkspaces = ["chat", "www", "dev", "music", "img", "vid", "gaming", "writing", "configs"]
 
-hackathonWorkspaces = ["brainstorming", "prototyping", "design", "dev", "5", "6", "7", "8", "9"]
+myWorkspaces = normWorkspaces
+
+hackathonWorkspaces = ["www", "chat", "zoom", "design", "dev", "present", "vid", "img", "music"]
 
 myWorkspaceIndices = M.fromList $ zipWith (,) myWorkspaces [1 ..]
 
@@ -131,7 +133,7 @@ myStartupHook = do
   spawn "redshift -l 38.973320:-104.622971"
   spawn "sudo mount -t vboxsf Shared_Folder /mnt/sf/"
 
-  spawn " sleep 2 && trayer --edge top --align right --width 10 --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --height 19 --iconspacing 5"
+  spawn " sleep 2 && trayer --edge top --align right --widthtype request --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --height 19 --iconspacing 5"
   spawn "nitrogen --restore &"
 
 myLayoutHook = avoidStruts (hiddenWindows (tiled ||| Mirror tiled ||| Full ||| threeCol ||| Mirror threeCol ||| spirals ||| Mirror spirals ||| Grid))
@@ -188,17 +190,26 @@ myKeys c =
         ("M-<Left>", addName "" $ prevWS),
         ("M-<KP_Add>", addName "" $ shiftToNext),
         ("M-<KP_Subtract>", addName "" $ shiftToPrev),
+        ("M-S-<KP_Add>", addName "" $ shiftToNext >> nextWS),
+        ("M-S-<KP_Subtract>", addName "" $ shiftToPrev >> prevWS),
         -- Windows
         ("M-S-c", addName "" $ kill),
         ("M-h", addName "" $ withFocused hideWindow),
         ("M-S-h", addName "" $ popOldestHiddenWindow),
-        ("M-<Return>", addName "" $ windows W.focusMaster),
+        ("M-<Return>", addName "" $ windows W.focusMaster)
+
+        -- Increase/decrease spacing
+        , ("C-M1-j", addName "Decrease window spacing" $ decWindowSpacing 4)
+        , ("C-M1-k", addName "Increase window spacing" $ incWindowSpacing 4)
+        , ("C-M1-h", addName "Decrease screen spacing" $ decScreenSpacing 4)
+        , ("C-M1-l", addName "Increase screen spacing" $ incScreenSpacing 4)
+
 
         -- Window resizing
-          ("M-h", addName "Shrink window"               $ sendMessage Shrink)
-        , ("M-l", addName "Expand window"               $ sendMessage Expand)
-        , ("M-M1-j", addName "Shrink window vertically" $ sendMessage MirrorShrink)
-        , ("M-M1-k", addName "Expand window vertically" $ sendMessage MirrorExpand)
+        , ("M-s", addName "Shrink window"               $ sendMessage Shrink)
+        , ("M-x", addName "Expand window"               $ sendMessage Expand)
+        , ("M-M1-s", addName "Shrink window vertically" $ sendMessage MirrorShrink)
+        , ("M-M1-x", addName "Expand window vertically" $ sendMessage MirrorExpand)
 
 
         -- Layouts
