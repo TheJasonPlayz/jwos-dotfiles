@@ -1,3 +1,15 @@
+-- Possible choices are:
+      -- DoomOne
+      -- Dracula
+      -- GruvboxDark
+      -- MonokaiPro
+      -- Nord
+      -- OceanicNext
+      -- Palenight
+      -- SolarizedDark
+      -- SolarizedLight
+      -- TomorrowNight
+
 import Colors.DoomOne
 import qualified Data.Map as M
 import Data.Maybe
@@ -32,6 +44,7 @@ import XMonad.Util.Loggers
 import XMonad.Util.NamedActions
 import XMonad.Util.Run
 import XMonad.Util.Ungrab
+import XMonad.Util.SpawnOnce
 
 myTerminal = "LIBGL_ALWAYS_SOFTWARE=1 alacritty"
 
@@ -133,7 +146,8 @@ myStartupHook = do
   spawn "redshift -l 38.973320:-104.622971"
   spawn "sudo mount -t vboxsf Shared_Folder /mnt/sf/"
 
-  spawn " sleep 2 && trayer --edge top --align right --widthtype request --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --height 19 --iconspacing 5"
+  spawnOnce ("sleep 2 && conky -c $HOME/.config/conky/xmonad/" ++ colorScheme ++ "-91.conkyrc")
+  spawnOnce ("sleep 2 && trayer --edge top --align right --widthtype request --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --height 19 --iconspacing 5 --alpha 0 " ++ colorTrayer)
   spawn "nitrogen --restore &"
 
 myLayoutHook = avoidStruts (hiddenWindows (tiled ||| Mirror tiled ||| Full ||| threeCol ||| Mirror threeCol ||| spirals ||| Mirror spirals ||| Grid))
@@ -185,6 +199,7 @@ myKeys c =
         ("M-e", addName "" $ spawn myEmacs),
         ("M-p", addName "" $ spawn "rofi -show combi"),
         ("M-a", addName "" $ spawn "alsamixer"),
+        ("M-c", addName "" $ spawn "conky -c ~/.config/conky/xmonad/doom-one-01.conkyrc"),
         -- Workspaces
         ("M-<Right>", addName "" $ nextWS),
         ("M-<Left>", addName "" $ prevWS),
