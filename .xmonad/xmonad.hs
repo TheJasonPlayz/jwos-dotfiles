@@ -58,7 +58,7 @@ myColorizer = colorRangeFromClassName
 
 main :: IO ()
 main = do
-  xmproc0 <- spawnPipe ("xmobar -x 0 $HOME/.xmobarrc")
+  xmproc0 <- spawnPipe ("xmobar -x 0 $HOME/.config/xmobar/.xmobarrc")
   xmonad $
     addDescrKeys ((mod4Mask .|. mod1Mask, xK_h), showKeybindings) myKeys $
       ewmh
