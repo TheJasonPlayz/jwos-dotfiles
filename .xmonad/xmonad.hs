@@ -134,16 +134,23 @@ myManageHook =
     ]
 
 myStartupHook = do
+  -- Set Window Manager Name
   setWMName "LG3D"
+  
+  -- Background / System Tray
   spawn "pulseaudio"
   spawn "picom"
   spawn "nm-applet"
   spawn "volumeicon"
-  spawn "emacs --daemon"
   spawn "cbatticon"
   spawn "redshift -l 38.973320:-104.622971"
-  spawn "sudo mount -t vboxsf Shared_Folder /mnt/sf/"
-
+  
+  -- Apps
+  spawn "flameshot"
+  spawn "discord"
+  spawn "emacs --daemon"
+  
+  -- Conky and Trayer
   spawnOnce ("sleep 2 && conky -c $HOME/.config/conky/xmonad/" ++ colorScheme ++ "-91.conkyrc")
   spawnOnce ("sleep 2 && trayer --edge top --align right --widthtype request --padding 6 --SetDockType true --SetPartialStrut true --expand true --monitor 1 --transparent true --iconspacing 5 --alpha 0 --height 22 " ++ colorTrayer)
 
@@ -199,6 +206,7 @@ myKeys c =
         ("M-p", addName "" $ spawn "rofi -show combi"),
         ("M-a", addName "" $ spawn "alsamixer"),
         ("M-c", addName "" $ spawn "conky -c ~/.config/conky/xmonad/doom-one-01.conkyrc"),
+        ("M-C-c", addName "" $ spawn "killall conky"),
         -- Workspaces
         ("M-<Right>", addName "" $ nextWS),
         ("M-<Left>", addName "" $ prevWS),
@@ -247,12 +255,12 @@ myKeys c =
         , ("M-M1-c", addName "Select favorite apps" $ spawnSelected' gsCategories)
         , ("M-M1-t", addName "Goto selected window"        $ goToSelected $ mygridConfig myColorizer)
         , ("M-M1-b", addName "Bring selected window"       $ bringSelected $ mygridConfig myColorizer)
-        , ("M-M1-3", addName "Menu of Internet apps"       $ spawnSelected' gsInternet)
-        , ("M-M1-4", addName "Menu of multimedia apps"     $ spawnSelected' gsMultimedia)
-        , ("M-M1-5", addName "Menu of office apps"         $ spawnSelected' gsOffice)
-        , ("M-M1-6", addName "Menu of settings apps"       $ spawnSelected' gsSettings)
-        , ("M-M1-7", addName "Menu of system apps"         $ spawnSelected' gsSystem)
-        , ("M-M1-8", addName "Menu of utilities apps"      $ spawnSelected' gsUtilities)
+        , ("M-M1-1", addName "Menu of Internet apps"       $ spawnSelected' gsInternet)
+        , ("M-M1-2", addName "Menu of multimedia apps"     $ spawnSelected' gsMultimedia)
+        , ("M-M1-3", addName "Menu of office apps"         $ spawnSelected' gsOffice)
+        , ("M-M1-4", addName "Menu of settings apps"       $ spawnSelected' gsSettings)
+        , ("M-M1-5", addName "Menu of system apps"         $ spawnSelected' gsSystem)
+        , ("M-M1-6", addName "Menu of utilities apps"      $ spawnSelected' gsUtilities)
 
       ]
 
