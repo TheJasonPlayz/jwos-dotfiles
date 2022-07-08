@@ -10,9 +10,14 @@
       -- SolarizedLight
       -- TomorrowNight
 
+import GS.Normal
+import GS.Hacking
+import GS.Functions
+import Other.Vars
 import Colors.DoomOne
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Char
 import System.IO
 import XMonad
 import XMonad.Actions.CycleWS
@@ -46,34 +51,14 @@ import XMonad.Util.Run
 import XMonad.Util.Ungrab
 import XMonad.Util.SpawnOnce
 
-myTerminal = "LIBGL_ALWAYS_SOFTWARE=1 alacritty"
-
-myEmacs = "emacsclient -c -a 'emacs'"
-
-myBorderWidth = 2
-
-myNormColor = "#afafaf"
-
-myFocusColor = "#fafafa"
-
-myFont = "xft:SauceCodePro Nerd Font Mono:regular:size=9:antialias=true:hinting=true"
-
 windowCount :: X (Maybe String)
 windowCount = gets $ Just . show . length . W.integrate' . W.stack . W.workspace . W.current . windowset
 
-myColorizer :: Window -> Bool -> X (String, String)
-myColorizer = colorRangeFromClassName
-                (0x28,0x2c,0x34) -- lowest inactive bg
-                (0x28,0x2c,0x34) -- highest inactive bg
-                (0xc7,0x92,0xea) -- active bg
-                (0xc0,0xa7,0x9a) -- inactive fg
-                (0x28,0x2c,0x34) -- active fg
-
 main :: IO ()
 main = do
-  xmproc0 <- spawnPipe ("xmobar -x 0 $HOME/.config/xmobar/.xmobarrc")
+  xmproc0 <- spawnPipe ("xmobar -x 0 ~/.config/xmobar/doom-one-xmobarrc")
   xmonad $
-    addDescrKeys ((mod4Mask .|. mod1Mask, xK_h), showKeybindings) myKeys $
+    addDescrKeys ((mod1Mask, xK_h), showKeybindings) myKeys $
       ewmh
         def
           { manageHook = myManageHook <+> manageDocks,
@@ -165,13 +150,19 @@ myLayoutHook = avoidStruts (hiddenWindows (tiled ||| Mirror tiled ||| Full ||| t
     ratio = 1 / 2 -- Default proportion of screen occupied by master pane
     delta = 3 / 100 -- Percent of screen to increment by when resizing panes
 
+subtitle' ::  String -> ((KeyMask, KeySym), NamedAction)
+subtitle' x = ((0,0), NamedAction $ map toUpper
+                      $ sep ++ "\n-- " ++ x ++ " --\n" ++ sep)
+  where
+    sep = replicate (6 + length x) '-'
+
 showKeybindings :: [((KeyMask, KeySym), NamedAction)] -> NamedAction
-showKeybindings x = addName "Show Keybindings" $
-  io $ do
-    h <- spawnPipe $ "yad --text-info --fontname=\"SauceCodePro Nerd Font Mono 12\" --fore=#46d9ff back=#282c36 --center --geometry=1200x800 --title \"XMonad keybindings\""
-    hPutStr h (unlines $ showKm x)
-    hClose h
-    return ()
+showKeybindings x = addName "Show Keybindings" $ io $ do
+  h <- spawnPipe $ "yad --text-info --fontname=\"SauceCodePro Nerd Font Mono 12\" --fore=#46d9ff --back=#000000 --center --geometry=1200x800 --title \"XMonad keybindings\""
+  --hPutStr h (unlines $ showKm x) -- showKM adds ">>" before subtitles
+  hPutStr h (unlines $ showKmSimple x) -- showKmSimple doesn't add ">>" to subtitles
+  hClose h
+  return ()
 
 myMouseBindings (XConfig {XMonad.modMask = modm}) =
   M.fromList $
@@ -195,183 +186,92 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) =
 
 myKeys :: XConfig l0 -> [((KeyMask, KeySym), NamedAction)]
 myKeys c =
-  (subtitle "Custom Keys" :) $ mkNamedKeymap c $
-      [ -- XMonad
-        ("M-S-k", addName "" $ spawn "killall trayer volumeicon nm-applet"),
-        ("M-S-r", addName "" $ spawn "xmonad --recompile && xmonad --restart"),
-        -- Programs
-        ("M-S-<Return>", addName "" $ spawn myTerminal),
+      let subKeys str ks = subtitle' str : mkNamedKeymap c ks in
+      
+      subKeys "XMonad Essentials"
+      [ ("M-S-k", addName "" $ spawn "killall trayer volumeicon nm-applet"),
+        ("M-C-r", addName "" $ spawn "xmonad --recompile"), 
+        ("M-S-r", addName "" $ spawn "xmonad --restart"),
+        ("M-S-c", addName "" $ kill) ]
+        
+      ^++^ subKeys "Programs"
+        [ ("M-S-<Return>", addName "" $ spawn myTerminal),
         ("M-f", addName "" $ spawn "pcmanfm"),
         ("M-e", addName "" $ spawn myEmacs),
         ("M-p", addName "" $ spawn "rofi -show combi"),
         ("M-a", addName "" $ spawn "alsamixer"),
         ("M-c", addName "" $ spawn "conky -c ~/.config/conky/xmonad/doom-one-01.conkyrc"),
-        ("M-C-c", addName "" $ spawn "killall conky"),
-        -- Workspaces
-        ("M-<Right>", addName "" $ nextWS),
+        ("M-C-c", addName "" $ spawn "killall conky") ]
+
+        ^++^ subKeys "Workspaces"
+        [ ("M-<Right>", addName "" $ nextWS),
         ("M-<Left>", addName "" $ prevWS),
         ("M-<KP_Add>", addName "" $ shiftToNext),
         ("M-<KP_Subtract>", addName "" $ shiftToPrev),
         ("M-S-<KP_Add>", addName "" $ shiftToNext >> nextWS),
-        ("M-S-<KP_Subtract>", addName "" $ shiftToPrev >> prevWS),
-        -- Windows
-        ("M-S-c", addName "" $ kill),
-        ("M-h", addName "" $ withFocused hideWindow),
+        ("M-S-<KP_Subtract>", addName "" $ shiftToPrev >> prevWS) ]
+        
+        ^++^ subKeys "Windows"
+        [ ("M-h", addName "" $ withFocused hideWindow),
         ("M-S-h", addName "" $ popOldestHiddenWindow),
-        ("M-<Return>", addName "" $ windows W.focusMaster)
+        ("M-<Return>", addName "" $ windows W.focusMaster) ]
 
-        -- Increase/decrease spacing
-        , ("C-M1-j", addName "Decrease window spacing" $ decWindowSpacing 4)
-        , ("C-M1-k", addName "Increase window spacing" $ incWindowSpacing 4)
-        , ("C-M1-h", addName "Decrease screen spacing" $ decScreenSpacing 4)
-        , ("C-M1-l", addName "Increase screen spacing" $ incScreenSpacing 4)
-
-
-        -- Window resizing
-        , ("M-s", addName "Shrink window"               $ sendMessage Shrink)
-        , ("M-x", addName "Expand window"               $ sendMessage Expand)
-        , ("M-M1-s", addName "Shrink window vertically" $ sendMessage MirrorShrink)
-        , ("M-M1-x", addName "Expand window vertically" $ sendMessage MirrorExpand)
+        ^++^ subKeys "Spacing"
+        [ ("C-M1-j", addName "Decrease window spacing" $ decWindowSpacing 4),
+        ("C-M1-k", addName "Increase window spacing" $ incWindowSpacing 4),
+        ("C-M1-h", addName "Decrease screen spacing" $ decScreenSpacing 4),
+        ("C-M1-l", addName "Increase screen spacing" $ incScreenSpacing 4) ]
 
 
-        -- Layouts
-        , ("M-<Space>", addName "" $ sendMessage NextLayout)
-        , ("M-.", addName "" $ sendMessage (IncMasterN 1))
-        , ("M-,", addName "" $ sendMessage (IncMasterN (-1)))
+        ^++^ subKeys "Window Sizing"
+        [ ("M-s", addName "Shrink window"               $ sendMessage Shrink),
+        ("M-x", addName "Expand window"               $ sendMessage Expand),
+        ("M-M1-s", addName "Shrink window vertically" $ sendMessage MirrorShrink),
+        ("M-M1-x", addName "Expand window vertically" $ sendMessage MirrorExpand) ]
 
-        , ("M-m", addName "Move focus to master window" $ windows W.focusMaster)
-        , ("M-j", addName "Move focus to next window"   $ windows W.focusDown)
-        , ("M-k", addName "Move focus to prev window"   $ windows W.focusUp)
-        , ("M-S-m", addName "Swap focused window with master window" $ windows W.swapMaster)
-        , ("M-S-j", addName "Swap focused window with next window"   $ windows W.swapDown)
-        , ("M-S-k", addName "Swap focused window with prev window"   $ windows W.swapUp)
-        , ("M-<Backspace>", addName "Move focused window to master"  $ promote)
-        , ("M-S-<Tab>", addName "Rotate all windows except master"   $ rotSlavesDown)
-        , ("M-C-<Tab>", addName "Rotate all windows current stack"   $ rotAllDown)
 
-        -- Grid Select
-        , ("M-M1-<Return>", addName "Select favorite apps" $ spawnSelected'
-       $   gsInternet ++ gsMultimedia ++ gsOffice ++ gsSettings ++ gsSystem ++ gsUtilities)
-        , ("M-M1-c", addName "Select favorite apps" $ spawnSelected' gsCategories)
-        , ("M-M1-t", addName "Goto selected window"        $ goToSelected $ mygridConfig myColorizer)
-        , ("M-M1-b", addName "Bring selected window"       $ bringSelected $ mygridConfig myColorizer)
-        , ("M-M1-1", addName "Menu of Internet apps"       $ spawnSelected' gsInternet)
-        , ("M-M1-2", addName "Menu of multimedia apps"     $ spawnSelected' gsMultimedia)
-        , ("M-M1-3", addName "Menu of office apps"         $ spawnSelected' gsOffice)
-        , ("M-M1-4", addName "Menu of settings apps"       $ spawnSelected' gsSettings)
-        , ("M-M1-5", addName "Menu of system apps"         $ spawnSelected' gsSystem)
-        , ("M-M1-6", addName "Menu of utilities apps"      $ spawnSelected' gsUtilities)
+        ^++^ subKeys "Switch Layouts & Master Commands"
+        [ ("M-<Space>", addName "" $ sendMessage NextLayout),
+        ("M-.", addName "" $ sendMessage (IncMasterN 1)),
+        ("M-,", addName "" $ sendMessage (IncMasterN (-1))) ]
 
-      ]
-
-myNavigation :: TwoD a (Maybe a)
-myNavigation = makeXEventhandler $ shadowWithKeymap navKeyMap navDefaultHandler
- where navKeyMap = M.fromList [
-          ((0,xK_Escape), cancel)
-         ,((0,xK_Return), select)
-         ,((0,xK_slash) , substringSearch myNavigation)
-         ,((0,xK_Left)  , move (-1,0)  >> myNavigation)
-         ,((0,xK_h)     , move (-1,0)  >> myNavigation)
-         ,((0,xK_Right) , move (1,0)   >> myNavigation)
-         ,((0,xK_l)     , move (1,0)   >> myNavigation)
-         ,((0,xK_Down)  , move (0,1)   >> myNavigation)
-         ,((0,xK_j)     , move (0,1)   >> myNavigation)
-         ,((0,xK_Up)    , move (0,-1)  >> myNavigation)
-         ,((0,xK_k)     , move (0,-1)  >> myNavigation)
-         ,((0,xK_y)     , move (-1,-1) >> myNavigation)
-         ,((0,xK_i)     , move (1,-1)  >> myNavigation)
-         ,((0,xK_n)     , move (-1,1)  >> myNavigation)
-         ,((0,xK_m)     , move (1,-1)  >> myNavigation)
-         ,((0,xK_space) , setPos (0,0) >> myNavigation)
-         ]
-       navDefaultHandler = const myNavigation
-
-mygridConfig :: p -> GSConfig Window
-mygridConfig colorizer = (buildDefaultGSConfig myColorizer)
-    { gs_cellheight   = 40
-    , gs_cellwidth    = 200
-    , gs_cellpadding  = 6
-    , gs_navigate    = myNavigation
-    , gs_originFractX = 0.5
-    , gs_originFractY = 0.5
-    , gs_font         = myFont
-    }
-
-spawnSelected' :: [(String, String)] -> X ()
-spawnSelected' lst = gridselect conf lst >>= flip whenJust spawn
-    where conf = def
-                   { gs_cellheight   = 40
-                   , gs_cellwidth    = 180
-                   , gs_cellpadding  = 6
-                   , gs_originFractX = 0.5
-                   , gs_originFractY = 0.5
-                   , gs_font         = myFont
-                   }
-
-runSelectedAction' :: GSConfig (X ()) -> [(String, X ())] -> X ()
-runSelectedAction' conf actions = do
-    selectedActionM <- gridselect conf actions
-    case selectedActionM of
-        Just selectedAction -> selectedAction
-        Nothing -> return ()
-
-gsCategories =
-  [ ("Internet",   "xdotool key super+alt+1")
-  , ("Multimedia", "xdotool key super+alt+2")
-  , ("Office",     "xdotool key super+alt+3")
-  , ("Settings",   "xdotool key super+alt+4")
-  , ("System",     "xdotool key super+alt+5")
-  , ("Utilities",  "xdotool key super+alt+6")
-  ]
-
-gsInternet =
-  [ ("Firefox", "firefox")
-  , ("Discord", "discord")
-  , ("Element", "element-desktop")
-  , ("LBRY App", "lbry")
-  , ("Mailspring", "mailspring")
-  , ("Nextcloud", "nextcloud")
-  , ("Transmission", "transmission-gtk")
-  , ("Zoom", "zoom")
-  ]
-
-gsMultimedia =
-  [ ("Audacity", "audacity")
-  , ("Blender", "blender")
-  , ("Deadbeef", "deadbeef")
-  , ("Kdenlive", "kdenlive")
-  , ("OBS Studio", "obs")
-  , ("VLC", "vlc")
-  ]
-
-gsOffice =
-  [ ("Document Viewer", "evince")
-  , ("LibreOffice", "libreoffice")
-  , ("LO Base", "lobase")
-  , ("LO Calc", "localc")
-  , ("LO Draw", "lodraw")
-  , ("LO Impress", "loimpress")
-  , ("LO Math", "lomath")
-  , ("LO Writer", "lowriter")
-  ]
-
-gsSettings =
-  [ ("Customize Look and Feel", "lxappearance")
-  ]
-
-gsSystem =
-  [ ("Alacritty", myTerminal)
-  , ("Bash", (myTerminal ++ " -e bash"))
-  , ("Htop", (myTerminal ++ " -e htop"))
-  , ("Fish", (myTerminal ++ " -e fish"))
-  , ("PCManFM", "pcmanfm")
-  , ("VirtualBox", "virtualbox")
-  , ("Virt-Manager", "virt-manager")
-  , ("Zsh", (myTerminal ++ " -e zsh"))
-  ]
-
-gsUtilities =
-  [ ("Emacs", "emacs")
-  , ("Emacsclient", "emacsclient -c -a 'emacs'")
-  , ("Nitrogen", "nitrogen")
-  ]
+        ^++^ subKeys "Layout Commands"
+        [ ("M-m", addName "Move focus to master window" $ windows W.focusMaster),
+        ("M-j", addName "Move focus to next window"   $ windows W.focusDown),
+        ("M-k", addName "Move focus to prev window"   $ windows W.focusUp),
+        ("M-S-m", addName "Swap focused window with master window" $ windows W.swapMaster),
+        ("M-S-j", addName "Swap focused window with next window"   $ windows W.swapDown),
+        ("M-S-k", addName "Swap focused window with prev window"   $ windows W.swapUp),
+        ("M-<Backspace>", addName "Move focused window to master"  $ promote),
+        ("M-S-<Tab>", addName "Rotate all windows except master"   $ rotSlavesDown),
+        ("M-C-<Tab>", addName "Rotate all windows current stack"   $ rotAllDown) ]
+        
+        ^++^ subKeys "Normal Grid Select"
+        [ ("M-M1-<Return>", addName "Select all" $ spawnSelected'
+        $   gsInternet ++ gsMultimedia ++ gsOffice ++ gsSettings ++ gsSystem ++ gsUtilities ++ gsAllHacking),
+        ("M-M1-f", addName "Select favorite apps" $ spawnSelected' gsFavorites),
+        ("M-M1-c", addName "Select all categories" $ spawnSelected' gsNormalCategories),
+        ("M-M1-t", addName "Goto selected window"        $ goToSelected $ mygridConfig myColorizer),
+        ("M-M1-b", addName "Bring selected window"       $ bringSelected $ mygridConfig myColorizer),
+        ("M-M1-1", addName "Menu of Internet apps"       $ spawnSelected' gsInternet),
+        ("M-M1-2", addName "Menu of multimedia apps"     $ spawnSelected' gsMultimedia),
+        ("M-M1-3", addName "Menu of office apps"         $ spawnSelected' gsOffice),
+        ("M-M1-4", addName "Menu of settings apps"       $ spawnSelected' gsSettings),
+        ("M-M1-5", addName "Menu of system apps"         $ spawnSelected' gsSystem),
+        ("M-M1-6", addName "Menu of utilities apps"      $ spawnSelected' gsUtilities),
+        ("M-M1-7", addName "Menu of hacking apps"        $ spawnSelected' gsHackingCategories) ]
+        
+        ^++^ subKeys "Hacking Grid Select"
+        [ ("M-M1-S-1", addName "Info Gathering" $ spawnSelected' gsIG),
+        ("M-M1-S-2", addName "Vunerability Analysis" $ spawnSelected' gsVA),
+        ("M-M1-S-3", addName "Web Application Analysis" $ spawnSelected' gsWAA),
+        ("M-M1-S-4", addName "Database Assessment" $ spawnSelected' gsDA),
+        ("M-M1-S-5", addName "Password Attacks" $ spawnSelected' gsPA),
+        ("M-M1-S-6", addName "Wireless Attacks" $ spawnSelected' gsWA),
+        ("M-M1=S-7", addName "Reverse Engineering" $ spawnSelected' gsRE),
+        ("M-S-M1-8", addName "Exploitation Tools" $ spawnSelected' gsET),
+        ("M-S-M1-9", addName "Sniffing & Spoofing" $ spawnSelected' gsSandS),
+        ("M-S-M1-1-0", addName "Post Exploitation" $ spawnSelected' gsPE),
+        ("M-S-M1-1-1", addName "Forensics" $ spawnSelected' gsF),
+        ("M-S-M1-1-2", addName "Reporting Tools" $ spawnSelected' gsRT),
+        ("M-S-M1-1-3", addName "Social Engineering Tools" $ spawnSelected' gsSE) ]
