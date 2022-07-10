@@ -9,7 +9,6 @@ gsNormalCategories =
     ("Favorites",  "xdotool key super+alt+f")
   , ("Internet",   "xdotool key super+alt+1")
   , ("Multimedia", "xdotool key super+alt+2")
-  
   , ("Office",     "xdotool key super+alt+3")
   , ("Settings",   "xdotool key super+alt+4")
   , ("System",     "xdotool key super+alt+5")
@@ -24,6 +23,10 @@ gsFavorites =
     , ("Firefox", "firefox")
     , ("Discord", "discord")
     , ("LXAppearance", "lxappearance") 
+    , ("OneDrive", "firefox https://onedrive.live.com")
+    , ("Evince", "evince")
+    , ("VSCodium", "codium")
+    , ("Obsidian", "obsidian")
   ]
 gsInternet =
   [ ("Firefox", "firefox")

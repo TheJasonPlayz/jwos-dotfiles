@@ -103,7 +103,7 @@ clickable ws = "<action=xdotool key super+" ++ show i ++ ">" ++ ws ++ "</action>
   where
     i = fromJust $ M.lookup ws myWorkspaceIndices
 
-normWorkspaces = ["chat", "www", "dev", "music", "img", "vid", "gaming", "writing", "configs"]
+normWorkspaces = ["chat", "dev", "www", "hacking", "music", "img", "vid", "gaming", "writing", "configs"]
 
 myWorkspaces = normWorkspaces
 

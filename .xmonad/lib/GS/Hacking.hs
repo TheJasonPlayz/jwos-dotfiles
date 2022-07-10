@@ -21,7 +21,7 @@ gsHackingCategories =
   ]
 gsIG = 
   [ 
-    ("W.I.P", myTerminal ++ " --hold -e " ++ "nmap")
+    ("NMap", myTerminal ++ " --hold -e " ++ "nmap")
   
   ]
 gsVA = 
@@ -29,6 +29,7 @@ gsVA =
   ]
 gsWAA = 
   [ 
+    ("Burp Suite", "burpsuite")
   ]
 gsDA = 
   [ 
