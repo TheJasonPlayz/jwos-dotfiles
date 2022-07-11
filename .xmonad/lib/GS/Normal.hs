@@ -24,9 +24,11 @@ gsFavorites =
     , ("Discord", "discord")
     , ("LXAppearance", "lxappearance") 
     , ("OneDrive", "firefox https://onedrive.live.com")
+    , ("OneNote", "firefox https://www.onenote.com")
     , ("Evince", "evince")
-    , ("VSCodium", "codium")
+    , ("VSCode", "code")
     , ("Obsidian", "obsidian")
+    , ("CherryTree", "cherrytree")
   ]
 gsInternet =
   [ ("Firefox", "firefox")

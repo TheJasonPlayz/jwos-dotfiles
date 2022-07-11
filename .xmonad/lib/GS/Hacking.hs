@@ -30,6 +30,7 @@ gsVA =
 gsWAA = 
   [ 
     ("Burp Suite", "burpsuite")
+  , ("ZAP Proxy", "zaproxy")
   ]
 gsDA = 
   [ 
