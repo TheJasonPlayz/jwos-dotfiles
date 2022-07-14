@@ -75,4 +75,6 @@ gsUtilities =
   [ ("Emacs", "emacs")
   , ("Emacsclient", "emacsclient -c -a 'emacs'")
   , ("Nitrogen", "nitrogen")
+  , ("IFConfig", myTerminal ++ "--hold -e" ++ "ifconfig")
+  , ("FTP", myTerminal ++ "--hold -e" ++ "ftp --help")
   ]

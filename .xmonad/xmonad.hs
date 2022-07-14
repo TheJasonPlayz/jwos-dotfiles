@@ -259,19 +259,55 @@ myKeys c =
         ("M-M1-4", addName "Menu of settings apps"       $ spawnSelected' gsSettings),
         ("M-M1-5", addName "Menu of system apps"         $ spawnSelected' gsSystem),
         ("M-M1-6", addName "Menu of utilities apps"      $ spawnSelected' gsUtilities),
-        ("M-M1-7", addName "Menu of hacking apps"        $ spawnSelected' gsHackingCategories) ]
+        ("M-M1-7", addName "Menu of hacking apps"        $ spawnSelected' hackingKeybindings) ]
         
-        ^++^ subKeys "Hacking Grid Select"
-        [ ("M-M1-S-1", addName "Info Gathering" $ spawnSelected' gsIG),
-        ("M-M1-S-2", addName "Vunerability Analysis" $ spawnSelected' gsVA),
-        ("M-M1-S-3", addName "Web Application Analysis" $ spawnSelected' gsWAA),
-        ("M-M1-S-4", addName "Database Assessment" $ spawnSelected' gsDA),
-        ("M-M1-S-5", addName "Password Attacks" $ spawnSelected' gsPA),
-        ("M-M1-S-6", addName "Wireless Attacks" $ spawnSelected' gsWA),
-        ("M-M1=S-7", addName "Reverse Engineering" $ spawnSelected' gsRE),
-        ("M-S-M1-8", addName "Exploitation Tools" $ spawnSelected' gsET),
-        ("M-S-M1-9", addName "Sniffing & Spoofing" $ spawnSelected' gsSandS),
-        ("M-S-M1-1-0", addName "Post Exploitation" $ spawnSelected' gsPE),
-        ("M-S-M1-1-1", addName "Forensics" $ spawnSelected' gsF),
-        ("M-S-M1-1-2", addName "Reporting Tools" $ spawnSelected' gsRT),
-        ("M-S-M1-1-3", addName "Social Engineering Tools" $ spawnSelected' gsSE) ]
+       ^++^ subKeys "Hacking Grid Select" 
+        [ ("M-M1-S-0", addName "Webapp" $ spawnSelected' gsWebapp)
+        , ("M-M1-S-1", addName "Fuzzer" $ spawnSelected' gsFuzzer)
+        , ("M-M1-S-2", addName "Scanner" $ spawnSelected' gsScanner)
+        , ("M-M1-S-3", addName "Proxy" $ spawnSelected' gsProxy)
+        , ("M-M1-S-4", addName "Windows" $ spawnSelected' gsWindows)
+        , ("M-M1-S-5", addName "Dos" $ spawnSelected' gsDos)
+        , ("M-M1-S-6", addName "Disassembler" $ spawnSelected' gsDisassembler)
+        , ("M-M1-S-7", addName "Cracker" $ spawnSelected' gsCracker)
+        , ("M-M1-S-8", addName "Voip" $ spawnSelected' gsVoip)
+        , ("M-M1-S-9", addName "Exploitation" $ spawnSelected' gsExploitation)
+        , ("M-M1-S-1-0", addName "Recon" $ spawnSelected' gsRecon)
+        , ("M-M1-S-1-1", addName "Spoof" $ spawnSelected' gsSpoof)
+        , ("M-M1-S-1-2", addName "Forensic" $ spawnSelected' gsForensic)
+        , ("M-M1-S-1-3", addName "Crypto" $ spawnSelected' gsCrypto)
+        , ("M-M1-S-1-4", addName "Backdoor" $ spawnSelected' gsBackdoor)
+        , ("M-M1-S-1-5", addName "Networking" $ spawnSelected' gsNetworking)
+        , ("M-M1-S-1-6", addName "Misc" $ spawnSelected' gsMisc)
+        , ("M-M1-S-1-7", addName "Defensive" $ spawnSelected' gsDefensive)
+        , ("M-M1-S-1-8", addName "Wireless" $ spawnSelected' gsWireless)
+        , ("M-M1-S-1-9", addName "Automation" $ spawnSelected' gsAutomation)
+        , ("M-M1-S-2-0", addName "Sniffer" $ spawnSelected' gsSniffer)
+        , ("M-M1-S-2-1", addName "Binary" $ spawnSelected' gsBinary)
+        , ("M-M1-S-2-2", addName "Packer" $ spawnSelected' gsPacker)
+        , ("M-M1-S-2-3", addName "Reversing" $ spawnSelected' gsReversing)
+        , ("M-M1-S-2-4", addName "Mobile" $ spawnSelected' gsMobile)
+        , ("M-M1-S-2-5", addName "Malware" $ spawnSelected' gsMalware)
+        , ("M-M1-S-2-6", addName "Code_audit" $ spawnSelected' gsCode_audit)
+        , ("M-M1-S-2-7", addName "Social" $ spawnSelected' gsSocial)
+        , ("M-M1-S-2-8", addName "Honeypot" $ spawnSelected' gsHoneypot)
+        , ("M-M1-S-2-9", addName "Hardware" $ spawnSelected' gsHardware)
+        , ("M-M1-S-3-0", addName "Fingerprint" $ spawnSelected' gsFingerprint)
+        , ("M-M1-S-3-1", addName "Decompiler" $ spawnSelected' gsDecompiler)
+        , ("M-M1-S-3-2", addName "Config" $ spawnSelected' gsConfig)
+        , ("M-M1-S-3-3", addName "Debugger" $ spawnSelected' gsDebugger)
+        , ("M-M1-S-3-4", addName "Firmware" $ spawnSelected' gsFirmware)
+        , ("M-M1-S-3-5", addName "Bluetooth" $ spawnSelected' gsBluetooth)
+        , ("M-M1-S-3-6", addName "Database" $ spawnSelected' gsDatabase)
+        , ("M-M1-S-3-7", addName "Automobile" $ spawnSelected' gsAutomobile)
+        , ("M-M1-S-3-8", addName "Nfc" $ spawnSelected' gsNfc)
+        , ("M-M1-S-3-9", addName "Tunnel" $ spawnSelected' gsTunnel)
+        , ("M-M1-S-4-0", addName "Drone" $ spawnSelected' gsDrone)
+        , ("M-M1-S-4-1", addName "Unpacker" $ spawnSelected' gsUnpacker)
+        , ("M-M1-S-4-2", addName "Radio" $ spawnSelected' gsRadio)
+        , ("M-M1-S-4-3", addName "Keylogger" $ spawnSelected' gsKeylogger)
+        , ("M-M1-S-4-4", addName "Stego" $ spawnSelected' gsStego)
+        , ("M-M1-S-4-5", addName "Anti_forensic" $ spawnSelected' gsAnti_forensic)
+        , ("M-M1-S-4-6", addName "Ids" $ spawnSelected' gsIds)
+        , ("M-M1-S-4-7", addName "Gpu" $ spawnSelected' gsGpu)
+        ]
