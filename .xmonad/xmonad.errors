@@ -6,3 +6,4 @@ lib/GS/Hacking.hs:205:1: warning: [-Wtabs]
     |
 205 |         ("SQLMap", myTerminal ++ "--hold -e" ++ "sqlmap")
     | ^^^^^^^^
+/home/jasonw/.xmonad/build-x86_64-linux/Main.o.tmp: renameFile:renamePath:rename: does not exist (No such file or directory)

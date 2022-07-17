@@ -27,7 +27,7 @@ gsFavorites =
     , ("OneNote", "firefox https://www.onenote.com")
     , ("Evince", "evince")
     , ("VSCode", "code")
-    , ("Obsidian", "obsidian")
+    , ("Notion", "firefox www.notion.so/login")
     , ("CherryTree", "cherrytree")
   ]
 gsInternet =
